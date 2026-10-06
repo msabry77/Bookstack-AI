@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  bookstack-ai:
+    image: bookstack-ai:swarm
+
+    environment:
+      MCP_URL: "https://mcp.progressiosolutions.com/mcp"
+      MCP_PROTOCOL_VERSION: "2025-06-18"
+      AZURE_OPENAI_ENDPOINT: "https://wiki-prod.openai.azure.com/"
+      AZURE_OPENAI_DEPLOYMENT: "gpt-4.1-mini"
+      AZURE_OPENAI_API_VERSION: "2025-01-01-preview"
+
+    networks:
+      - bookstack-ai-internal
+
+    deploy:
+      replicas: 1
+
+      placement:
+        constraints:
+          - node.role == manager
+
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+        window: 120s
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+networks:
+  bookstack-ai-internal:
+    external: true
+    name: bookstack-ai-internal
